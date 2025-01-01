@@ -1,6 +1,10 @@
 import yfinance as yf
 import matplotlib.pyplot as plt
 from datetime import datetime
+from flask import Flask, render_template, request
+import os
+
+app = Flask(__name__)
 
 def fetchData(ticker):
     stock = yf.Ticker(ticker)
@@ -13,13 +17,9 @@ def priceDrop(ticker):
     curData = data["Close"].iloc[-1]
 
     if ((peakData - curData) / peakData) * 100 >= 7:
-        print(f"{ticker} is a possible purchase!")
-        plotStockData(ticker, data, peakData, curData, "no")
-        return True
+        return True, data, peakData, curData
     else:
-        print(f"Not a good time to buy {ticker}")
-        plotStockData(ticker, data, peakData, curData, "no")
-        return False
+        return False, data, peakData, curData
 
 def plotStockData(ticker, data, price1, price2, stockStatus):
     plt.figure(figsize=(10, 6))
@@ -43,7 +43,12 @@ def plotStockData(ticker, data, price1, price2, stockStatus):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
+
+    plot_path = f"{ticker}_stock_plot.png"  
+    plt.savefig(os.path.join("static", plot_path))
+    plt.close()
+
+    return plot_path
 
 def checkIfSell(ticker, purchaseDate):
     stock = yf.Ticker(ticker)
@@ -64,36 +69,56 @@ def checkIfSell(ticker, purchaseDate):
 
     gainPercent = ((currentData - purchaseData) / purchaseData) * 100
 
-    # Calculate the time difference
     timeDifference = (datetime.now() - purchaseDate).days
 
-    print("------------------------------------")
-    print(f"Purchase date: {closestDate.date()}, Purchase price: {purchaseData}")
-    print(f"Current price: {currentData}")
-    print(f"Percent gain: {gainPercent:.2f}%")
-    print("Profit per share: $", (currentData - purchaseData))
+    plot_path = plotStockData(ticker, data, purchaseData, currentData, "yes")
 
-    if timeDifference > 365:
-        print("You have a long-term tax gain.")
+    if gainPercent >= 7:
+        statement = "Good time to sell " + stock.ticker
     else:
-        print("You have a short-term tax gain.")
+        statement = "Not a good time to sell " + stock.ticker
 
-    plotStockData(ticker, data, purchaseData, currentData, "yes")
+    return {
+        "purchaseDate": closestDate.date(),
+        "purchasePrice": purchaseData,
+        "currentPrice": currentData,
+        "gainPercent": gainPercent,
+        "profit": currentData - purchaseData,
+        "timeDifference": timeDifference,
+        "plotPath": plot_path,
+        "data": data,  
+        "statement": statement
+    }
 
-    if gainPercent >= 10:
-        print(f"Good time to sell {ticker}!")
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/check_stock', methods=['POST'])
+def check_stock():
+    ticker = request.form['ticker']
+    stockStatus = request.form['stockStatus']
+
+    if stockStatus == "no":
+        is_purchase, data, peakPrice, curPrice = priceDrop(ticker)
+        plot_path = plotStockData(ticker, data, peakPrice, curPrice, "no")
+        message = f"{ticker} is a possible purchase!" if is_purchase else f"Not a good time to buy {ticker}"
+        return render_template('index.html', message=message, plot_path=plot_path)
+
+    elif stockStatus == "yes":
+        purchase_date_str = request.form['purchaseDate']
+        if purchase_date_str:
+            purchaseDate = datetime.strptime(purchase_date_str, "%Y-%m-%d")
+            result = checkIfSell(ticker, purchaseDate)
+
+            plot_path = plotStockData(ticker, result['data'], result['purchasePrice'], result['currentPrice'], "yes")
+
+            return render_template('index.html', **result, plot_path=plot_path)
+        else:
+            return render_template('index.html', message="Please provide a valid purchase date.")
+
     else:
-        print(f"Not a good time to sell {ticker}.")
+        return render_template('index.html', message="Invalid input.")
 
-ticker = input("Enter stock ticker: ")
-stockStatus = input("Have you already bought the stock? (yes/no): ").lower()
-
-if stockStatus == "no":
-    priceDrop(ticker)
-
-elif stockStatus == "yes":
-    purchaseDate = input("Enter the purchase date (YYYY-MM-DD): ")
-    purchaseDate = datetime.strptime(purchaseDate, "%Y-%m-%d")
-    checkIfSell(ticker, purchaseDate)
-else:
-    print("Invalid input.")
+if __name__ == '__main__':
+    app.run(debug=True)
