@@ -1,0 +1,61 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1f1f1f;
+    color: #2196F3;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+}
+
+.container {
+    width: 60%;
+    margin: auto;
+    padding: 20px;
+}
+
+input[type="text"], input[type="date"], select {
+    padding: 10px;
+    width: 100%;
+    border-radius: 10px;
+    margin: 10px 0;
+    border: 1px solid #2196F3;
+    background-color: #333;
+    color: #fff;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+}
+
+button:hover {
+    background-color: #1e88e5;
+}
+
+.result {
+    margin-top: 20px;
+}
+
+.message {
+    font-size: 1.2em;
+}
+
+.plot {
+    margin-top: 20px;
+    text-align: center;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
