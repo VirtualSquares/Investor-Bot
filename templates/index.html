@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>Stock Price Checker</h1>
+    <form method="POST" action="/check_stock">
+        <label for="ticker">Stock Ticker:</label>
+        <input type="text" id="ticker" name="ticker" required>
+
+        <label for="stockStatus">Have you already bought the stock?</label>
+        <select name="stockStatus" required>
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+        </select>
+
+        <div id="purchaseDateDiv" style="display:none;">
+            <label for="purchaseDate">Enter the purchase date:</label>
+            <input type="date" id="purchaseDate" name="purchaseDate">
+        </div>
+
+        <button type="submit">Check</button>
+    </form>
+
+    {% if message %}
+    <div class="result">
+        <p class="message">{{ message }}</p>
+    </div>
+    {% endif %}
+
+
+    {% if plot_path %}
+    <div class="statement" style="color: #2196F3; font-size: larger; font-weight: bold;">
+        <p>{{ statement }}</p>
+    </div>
+    <div class="plot">
+        <img src="{{ url_for('static', filename=plot_path) }}" alt="Stock Plot">
+    </div>
+    {% endif %}
+
+    {% if purchaseDate %}
+    <div style="color: white;">
+        <p>Purchase Date: {{ purchaseDate }}</p>
+        <p>Purchase Price: {{ purchasePrice }}</p>
+        <p>Current Price: {{ currentPrice }}</p>
+        <p>Gain Percentage: {{ gainPercent }}%</p>
+        <p>Profit: {{ profit }}</p>
+        <p>Time Difference: {{ timeDifference }} days</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.querySelector('select[name="stockStatus"]').addEventListener('change', function () {
+        if (this.value === "yes") {
+            document.getElementById('purchaseDateDiv').style.display = 'block';
+        } else {
+            document.getElementById('purchaseDateDiv').style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
